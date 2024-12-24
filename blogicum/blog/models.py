@@ -6,6 +6,7 @@ from django.utils import timezone
 from core.models import BaseModel
 from .constants import MAX_LEN
 
+
 # User - модель для описания пользователя(встроенная).
 User = get_user_model()
 

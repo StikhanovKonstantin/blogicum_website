@@ -1,7 +1,10 @@
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, reverse_lazy
 from django.views.generic.edit import CreateView
+from django.contrib.auth import get_user_model
 
+
+User = get_user_model()
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -10,8 +13,12 @@ urlpatterns = [
     path('auth/', include('django.contrib.auth.urls')),
     path(
         'auth/registration/',
-        CreateView.as_view()
-    )
+        CreateView.as_view(
+            form_class=User,
+            success_url=reverse_lazy('blog:index')
+        ),
+        name='registration'
+    ),
 ]
 
 # Переопределеяем страницу ошибки 404.
