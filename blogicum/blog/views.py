@@ -1,8 +1,14 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import Http404
+from django.views.generic import CreateView, UpdateView, DeleteView
+from django.urls import reverse_lazy
+from django.contrib.auth import get_user_model
 
 from .models import Post, Category
 from .constants import MAIN_LIMIT
+
+
+User = get_user_model()
 
 
 def index(request):
@@ -46,3 +52,43 @@ def category_posts(request, category_slug):
         'post_list': post_list
     }
     return render(request, 'blog/category.html', context)
+
+
+class CreatePostView(CreateView):
+    """CBV - страничка для создания нового поста."""
+
+    model = Post
+    fields = '__all__'
+    template_name = 'blog/create.html'
+    success_url = reverse_lazy('blog:index')
+
+
+class EditPostView(UpdateView):
+    """CBV - изменение конкретного поста."""
+
+    model = Post
+    fields = '__all__'
+    template_name = 'blog/create.html'
+    success_url = reverse_lazy('blog:index')
+
+
+class DeletePostView(DeleteView):
+    model = Post
+    template_name = 'blog/create.html'
+    success_url = reverse_lazy('blog:index')
+
+
+class EditProfileView(UpdateView):
+    ...
+
+
+def profile_detail(request, username):
+    """Страничка профиля - показывает профиль конкретного пользователя."""
+    profile = get_object_or_404(
+        User,
+        username=username
+    )
+    context: dict = {
+        'profile': profile
+    }
+    return render(request, 'blog/profile.html', context)
