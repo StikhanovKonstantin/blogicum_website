@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.urls import reverse
 
 # Импортируем абстрактную модель:
 from core.models import BaseModel
@@ -117,7 +118,7 @@ class Post(BaseModel):
         return self.title
 
 
-class Comments(models.Model):
+class Comment(models.Model):
     """Модель для комментариев под посты."""
 
     text = models.TextField(
@@ -127,7 +128,7 @@ class Comments(models.Model):
         Post,
         on_delete=models.CASCADE,
         related_name='comments',
-        verbose_name='Пост для комментария'
+        verbose_name='Пост для комментария',
     )
     created_at = models.DateTimeField(
         'Когда создан',
@@ -141,6 +142,11 @@ class Comments(models.Model):
 
     class Meta:
         ordering = ('created_at', 'author',)
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
 
     def __str__(self):
         return self.text
+
+    def get_absolute_url(self):
+        return reverse("model_detail", kwargs={"pk": self.pk})

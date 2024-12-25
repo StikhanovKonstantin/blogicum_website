@@ -1,11 +1,11 @@
 from django import forms
 
-from .models import Comments
+from .models import Comment
 
 
 class CommentsForm(forms.ModelForm):
     """Форма для оставления комментариев под постами."""
 
     class Meta:
-        model = Comments
+        model = Comment
         fields = ('text',)

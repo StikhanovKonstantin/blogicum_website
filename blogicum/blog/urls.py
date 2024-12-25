@@ -5,7 +5,7 @@ from . import views
 app_name = 'blog'
 
 urlpatterns: list = [
-    path('', views.IndexView.as_view(), name='index'),
+    path('', views.PostListView.as_view(), name='index'),
     path(
         'posts/<int:post_id>/',
         views.PostDetailView.as_view(),
@@ -13,32 +13,47 @@ urlpatterns: list = [
     ),
     path(
         'category/<slug:category_slug>/',
-        views.category_posts,
+        views.CategoryListView.as_view(),
         name='category_posts'
     ),
     path(
         'post/create/',
-        views.CreatePostView.as_view(),
+        views.PostCreateView.as_view(),
         name='create_post'
     ),
     path(
         'post/<int:pk>/edit/',
-        views.EditPostView.as_view(),
+        views.PostUpdateView.as_view(),
         name='edit_post'
     ),
     path(
         'post/<int:pk>/delete/',
-        views.DeletePostView,
+        views.PostDeleteView.as_view(),
         name='delete_post'
     ),
     path(
-        '<int:pk>/comment/',
-        views.CommentsCreateView.as_view(),
+        'posts/<int:post_id>/comment/',
+        views.CommentCreateView.as_view(),
         name='add_comment'
     ),
     path(
-        'profile/<str:username>/',
-        views.profile_detail,
+        'posts/<int:post_id>/edit_comment/<int:comment_id>/',
+        views.CommentUpdateView.as_view(),
+        name='edit_comment'
+    ),
+    path(
+        'posts/<int:post_id>/delete_comment/<int:comment_id>/',
+        views.CommentDeleteView.as_view(),
+        name='delete_comment'
+    ),
+    path(
+        'profile/<slug:username>/',
+        views.UserDetailView.as_view(),
         name='profile'
+    ),
+    path(
+        'profile/edit/<slug:username>/',
+        views.UserUpdateView.as_view(),
+        name='edit_profile'
     ),
 ]
