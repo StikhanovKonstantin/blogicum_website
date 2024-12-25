@@ -115,3 +115,32 @@ class Post(BaseModel):
 
     def __str__(self) -> str:
         return self.title
+
+
+class Comments(models.Model):
+    """Модель для комментариев под посты."""
+
+    text = models.TextField(
+        'Текст комментария'
+    )
+    post = models.ForeignKey(
+        Post,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='Пост для комментария'
+    )
+    created_at = models.DateTimeField(
+        'Когда создан',
+        auto_now_add=True
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Автор'
+    )
+
+    class Meta:
+        ordering = ('created_at', 'author',)
+
+    def __str__(self):
+        return self.text
