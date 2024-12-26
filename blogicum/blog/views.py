@@ -1,4 +1,5 @@
 from django.db.models.base import Model as Model
+from django.forms import BaseModelForm
 from django.shortcuts import get_object_or_404
 from django.http import Http404
 from django.views.generic import (
@@ -11,7 +12,7 @@ from typing import Any
 
 from .models import Post, Category, Comment
 from .constants import MAIN_LIMIT
-from .forms import CommentsForm
+from .forms import CommentsForm, PostForm
 
 
 User = get_user_model()
@@ -92,9 +93,14 @@ class PostCreateView(CreateView):
     """CBV - страничка для создания нового поста."""
 
     model = Post
-    fields = '__all__'
+    form_class = PostForm
     template_name = 'blog/create.html'
     success_url = reverse_lazy('blog:index')
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        form.instance.is_published = True
+        return super().form_valid(form)
 
 
 class PostUpdateView(UpdateView):
