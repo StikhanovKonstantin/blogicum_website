@@ -106,3 +106,6 @@ CSRF_FAILURE_VIEW = 'core.views.csrf_failure'
 
 # Переадресуем пользователя сюда после логина.
 LOGIN_REDIRECT_URL = 'blog:index'
+
+# Определяем дерикторию для хранения фотографий.
+MEDIA_ROOT = BASE_DIR / 'media'

@@ -9,7 +9,7 @@
       <div class="card-body">
         {% if post.image %}
           <a href="{{ post.image.url }}" target="_blank">
-            <img class="border-3 rounded img-fluid img-thumbnail mb-2 mx-auto d-block" src="{{ post.image.url }}">
+            <img class="border-3 rounded img-thumbnail mb-2 mx-auto d-block fixed-size-img" src="{{ post.image.url }}">
           </a>
         {% endif %}
         <h5 class="card-title">{{ post.title }}</h5>

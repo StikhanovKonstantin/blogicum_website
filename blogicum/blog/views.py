@@ -1,5 +1,4 @@
 from django.db.models.base import Model as Model
-from django.forms import BaseModelForm
 from django.shortcuts import get_object_or_404
 from django.http import Http404
 from django.views.generic import (
@@ -7,32 +6,61 @@ from django.views.generic import (
 )
 from django.urls import reverse_lazy, reverse
 from django.contrib.auth import get_user_model
+from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
+from django.db.models import Count
 
 from typing import Any
 
 from .models import Post, Category, Comment
-from .constants import MAIN_LIMIT
 from .forms import CommentsForm, PostForm
 
 
 User = get_user_model()
 
 
+class OnlyAuthorMixin(UserPassesTestMixin):
+    """
+    Миксина - проверят залогинен ли пользователь,
+    а также позволяет редактировать/удалять ПОСТЫ только автору.
+    """
+
+    def test_func(self):
+        object = self.get_object()
+        return object.author == self.request.user
+
+
+class OnlyUsernameMixin(UserPassesTestMixin):
+    """
+    Миксина - проверят залогинен ли пользователь,
+    а также позволяет редактировать/удалять КОММЕНТАРИИ только автору.
+    """
+
+    def test_func(self):
+        object = self.get_object()
+        return object == self.request.user
+
+
 class PostListView(ListView):
     """
     Главная страница.
-    Показывает 5 последних публикаций.
+    Показывает 10 публикаций на 1-й странице.
     """
 
     model = Post
     template_name = 'blog/index.html'
     paginate_by = 10
-
-    def get_queryset(self):
-        return (
-            Post.objects.is_category_published()[:MAIN_LIMIT]  # type: ignore
-            .select_related('category')
+    queryset = (
+            Post.is_category_published()  # type: ignore
+            .select_related('category', 'location', 'author')
+            .annotate(comment_count=Count('comments'))
         )
+
+    # def get_queryset(self):
+    #     return (
+    #         Post.is_category_published()  # type: ignore
+    #         .select_related('category', 'location', 'author')
+    #         .annotate(comment_count=Count('comments'))
+    #     )
 
 
 class PostDetailView(DetailView):
@@ -89,30 +117,42 @@ class CategoryListView(ListView):
         return context
 
 
-class PostCreateView(CreateView):
+class PostCreateView(LoginRequiredMixin, CreateView):
     """CBV - страничка для создания нового поста."""
 
     model = Post
     form_class = PostForm
     template_name = 'blog/create.html'
-    success_url = reverse_lazy('blog:index')
 
     def form_valid(self, form):
+        # Связываем пост с текущим пользователем
+        # и устанавливаем флаг публикации.
         form.instance.author = self.request.user
         form.instance.is_published = True
         return super().form_valid(form)
 
+    def get_success_url(self) -> str:
+        return reverse(
+            'blog:profile', kwargs={
+                'username': self.request.user.username  # type: ignore
+            }
+        )
 
-class PostUpdateView(UpdateView):
+
+class PostUpdateView(OnlyAuthorMixin, UpdateView):
     """CBV - изменение конкретного поста по ID"""
 
     model = Post
-    fields = '__all__'
+    fields = 'title', 'text', 'category', 'image'
     template_name = 'blog/create.html'
-    success_url = reverse_lazy('blog:index')
+
+    def get_success_url(self) -> str:
+        return reverse(
+            'blog:post_detail', kwargs={'post_id': self.object.pk}
+        )
 
 
-class PostDeleteView(DeleteView):
+class PostDeleteView(OnlyAuthorMixin, DeleteView):
     """CBV - удаление конкретного поста по ID"""
 
     model = Post
@@ -120,8 +160,8 @@ class PostDeleteView(DeleteView):
     success_url = reverse_lazy('blog:index')
 
 
-class CommentCreateView(CreateView):
-    """CBV - создание комментариев под постами."""
+class CommentCreateView(LoginRequiredMixin, CreateView):
+    """CBV - создание комментариев под постами2."""
 
     model = Comment
     form_class = CommentsForm
@@ -142,7 +182,7 @@ class CommentCreateView(CreateView):
         )
 
 
-class CommentUpdateView(UpdateView):
+class CommentUpdateView(OnlyAuthorMixin, UpdateView):
     model = Comment
     fields = '__all__'
     template_name = 'blog/comment.html'
@@ -158,7 +198,7 @@ class CommentUpdateView(UpdateView):
         )
 
 
-class CommentDeleteView(DeleteView):
+class CommentDeleteView(OnlyAuthorMixin, DeleteView):
     """CBV - удаление комментария, используя ID поста и ID комментария."""
 
     model = Comment
@@ -166,7 +206,7 @@ class CommentDeleteView(DeleteView):
     success_url = reverse_lazy('blog:index')
 
     def get_object(self, queryset=None):
-        """Получаем нужный нужный коммент. по ID поста и ID комментария."""
+        """Получаем нужный коммент. по ID поста и ID комментария."""
         post_id = self.kwargs['post_id']
         comment_id = self.kwargs['comment_id']
         return get_object_or_404(self.model, pk=comment_id, post_id=post_id)
@@ -178,6 +218,8 @@ class CommentDeleteView(DeleteView):
 
 
 class UserDetailView(DetailView):
+    """CBV - страница просмотра профиля."""
+
     model = User
     template_name = 'blog/profile.html'
     context_object_name = 'profile'
@@ -197,9 +239,11 @@ class UserDetailView(DetailView):
         return context
 
 
-class UserUpdateView(UpdateView):
+class UserUpdateView(OnlyUsernameMixin, UpdateView):
+    """Форма для редактирования профиля."""
+
     model = User
-    fields = '__all__'
+    fields = 'first_name', 'last_name', 'username', 'email'
     template_name = 'blog/user.html'
 
     def get_object(self, queryset=None) -> Model:

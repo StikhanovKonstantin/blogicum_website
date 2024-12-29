@@ -106,6 +106,11 @@ class Post(BaseModel):
         null=True,
         verbose_name='Категория',
     )
+    image = models.ImageField(
+        'Фото',
+        blank=True,
+        upload_to='posts_images'
+    )
     objects = PostManager()
 
     class Meta:
@@ -141,7 +146,7 @@ class Comment(models.Model):
     )
 
     class Meta:
-        ordering = ('created_at', 'author',)
+        ordering = ('-created_at',)
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
 
