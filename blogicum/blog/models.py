@@ -72,7 +72,6 @@ class Category(BaseModel):
     class Meta:
         verbose_name = 'категория'
         verbose_name_plural = 'Категории'
-        ordering = ('created_at', 'title',)
 
     def __str__(self) -> str:
         return self.title
@@ -116,7 +115,6 @@ class Post(BaseModel):
     class Meta:
         verbose_name = 'публикация'
         verbose_name_plural = 'Публикации'
-        ordering = ('-pub_date',)
         default_related_name = 'post'
 
     def __str__(self) -> str:
@@ -146,7 +144,7 @@ class Comment(models.Model):
     )
 
     class Meta:
-        ordering = ('-created_at',)
+        ordering = ('created_at',)
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
 

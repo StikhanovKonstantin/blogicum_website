@@ -102,10 +102,15 @@ STATIC_URL = '/static_develop/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Кастомная обработка ошибки 403:
-CSRF_FAILURE_VIEW = 'core.views.csrf_failure'
+CSRF_FAILURE_VIEW = 'pages.views.csrf_failure'
 
 # Переадресуем пользователя сюда после логина.
 LOGIN_REDIRECT_URL = 'blog:index'
 
 # Определяем дерикторию для хранения фотографий.
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Подключаем бэкенд filebased.EmailBackend:
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+# Указываем директорию, в которую будут сохраняться файлы писем:
+EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'

@@ -17,17 +17,17 @@ urlpatterns: list = [
         name='category_posts'
     ),
     path(
-        'post/create/',
+        'posts/create/',
         views.PostCreateView.as_view(),
         name='create_post'
     ),
     path(
-        'post/<int:pk>/edit/',
+        'posts/<int:pk>/edit/',
         views.PostUpdateView.as_view(),
         name='edit_post'
     ),
     path(
-        'post/<int:pk>/delete/',
+        'posts/<int:pk>/delete/',
         views.PostDeleteView.as_view(),
         name='delete_post'
     ),

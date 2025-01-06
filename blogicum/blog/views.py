@@ -1,5 +1,5 @@
 from django.db.models.base import Model as Model
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.http import Http404
 from django.views.generic import (
     CreateView, UpdateView, DeleteView, ListView, DetailView
@@ -8,6 +8,8 @@ from django.urls import reverse_lazy, reverse
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.db.models import Count
+from django.core.paginator import Paginator
+from django.utils import timezone
 
 from typing import Any
 
@@ -23,6 +25,13 @@ class OnlyAuthorMixin(UserPassesTestMixin):
     Миксина - проверят залогинен ли пользователь,
     а также позволяет редактировать/удалять ПОСТЫ только автору.
     """
+
+    def get_login_url(self):
+        obj = self.get_object()
+        return reverse_lazy('blog:post_detail', kwargs={'post_id': obj.pk})
+
+    def handle_no_permission(self):
+        return redirect(self.get_login_url())
 
     def test_func(self):
         object = self.get_object()
@@ -50,17 +59,15 @@ class PostListView(ListView):
     template_name = 'blog/index.html'
     paginate_by = 10
     queryset = (
-            Post.is_category_published()  # type: ignore
-            .select_related('category', 'location', 'author')
-            .annotate(comment_count=Count('comments'))
+        Post.objects.is_category_published(
+        ).select_related(
+            'category', 'location', 'author'
+        ).annotate(
+            comment_count=Count('comments')
+        ).order_by(
+            '-pub_date'
         )
-
-    # def get_queryset(self):
-    #     return (
-    #         Post.is_category_published()  # type: ignore
-    #         .select_related('category', 'location', 'author')
-    #         .annotate(comment_count=Count('comments'))
-    #     )
+    )
 
 
 class PostDetailView(DetailView):
@@ -70,12 +77,27 @@ class PostDetailView(DetailView):
     context_object_name = 'post'
 
     def get_object(self, queryset=None):
-        """Переопределяем метод, прописывая собственный запрос."""
         post_id = self.kwargs.get('post_id')
-        try:
-            return self.model.objects.get(pk=post_id)
-        except self.model.DoesNotExist:
+
+        # Получаем пост без учета даты публикации и доступности категории
+        post = get_object_or_404(
+            self.model.objects.select_related('category'),
+            pk=post_id
+        )
+
+        # Проверяем права доступа: неопубликованные посты
+        #  доступны только автору.
+        if not post.is_published or (
+            post.category and not post.category.is_published
+        ):
+            if post.author != self.request.user:
+                raise Http404('Публикация не найдена')
+
+        # Проверяем дату публикации, ошибки не будет если автор
+        if post.pub_date > timezone.now() and post.author != self.request.user:
             raise Http404('Публикация не найдена')
+
+        return post
 
     def get_context_data(self, **kwargs):
         """
@@ -85,7 +107,7 @@ class PostDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         context['form'] = CommentsForm()
         context['comments'] = (
-            self.object.comments.select_related('author')  # type: ignore
+            self.object.comments.select_related('author')
         )
         return context
 
@@ -106,8 +128,12 @@ class CategoryListView(ListView):
             is_published=True
         )
         return (
-            Post.objects.published()  # type: ignore
-            .filter(category=self.category)
+            Post.objects.published(
+            ).filter(
+                category=self.category
+            ).annotate(
+                comment_count=Count('comments')
+            ).order_by('-pub_date')
         )
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
@@ -128,13 +154,16 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         # Связываем пост с текущим пользователем
         # и устанавливаем флаг публикации.
         form.instance.author = self.request.user
-        form.instance.is_published = True
+        if form.instance.pub_date > timezone.now():
+            form.instance.is_published = False
+        else:
+            form.instance.is_published = True
         return super().form_valid(form)
 
     def get_success_url(self) -> str:
         return reverse(
             'blog:profile', kwargs={
-                'username': self.request.user.username  # type: ignore
+                'username': self.request.user.username
             }
         )
 
@@ -173,7 +202,7 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
         на создание комментария и Номер Поста из URL.
         """
         form.instance.author = self.request.user
-        form.instance.post_id = self.kwargs['post_id']
+        form.instance.post = get_object_or_404(Post, id=self.kwargs['post_id'])
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -232,10 +261,23 @@ class UserDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         profile = self.get_object()
-        # Получаем посты автора
-        context['posts'] = Post.objects.filter(author=profile)
-        # Используем их для пагинации
-        context['page_obj'] = context['posts']
+        # Получаем посты автора.
+        if self.request.user == profile:
+            # Если пользователь - автор, показываем все посты.
+            posts = Post.objects.filter(author=profile)
+        else:
+            # Иначе показываем только опубликованные.
+            posts = Post.objects.filter(author=profile, is_published=True)
+        context['posts'] = posts.order_by(
+            '-pub_date'
+        ).annotate(
+            comment_count=Count('comments')
+        )
+        paginator = Paginator(context['posts'], self.paginate_by)
+        page_number = self.request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        context['page_obj'] = page_obj
         return context
 
 

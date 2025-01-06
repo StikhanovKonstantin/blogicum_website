@@ -23,7 +23,7 @@ urlpatterns = [
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Переопределеяем страницу ошибки 404.
-handler404 = 'core.views.page_not_found'
+handler404 = 'pages.views.page_not_found'
 
 # Переопределяем страницу ошибки 500.
-handler500 = 'core.views.server_failure'
+handler500 = 'pages.views.server_failure'
