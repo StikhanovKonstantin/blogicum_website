@@ -1,3 +1,5 @@
+from typing import Any
+
 from django.db.models.base import Model as Model
 from django.shortcuts import get_object_or_404, redirect
 from django.http import Http404
@@ -10,11 +12,11 @@ from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.db.models import Count
 from django.core.paginator import Paginator
 from django.utils import timezone
-
-from typing import Any
+from django.db.models import Q
 
 from .models import Post, Category, Comment
 from .forms import CommentsForm, PostForm
+from .constants import PAGINATION_COUNT
 
 
 User = get_user_model()
@@ -49,7 +51,13 @@ class OnlyUsernameMixin(UserPassesTestMixin):
         return object == self.request.user
 
 
-class PostListView(ListView):
+class PaginateMixin:
+    """Миксина - добавляет пагинацию в некоторые CBV функции."""
+
+    paginate_by = PAGINATION_COUNT
+
+
+class PostListView(PaginateMixin, ListView):
     """
     Главная страница.
     Показывает 10 публикаций на 1-й странице.
@@ -57,7 +65,6 @@ class PostListView(ListView):
 
     model = Post
     template_name = 'blog/index.html'
-    paginate_by = 10
     queryset = (
         Post.objects.is_category_published(
         ).select_related(
@@ -86,7 +93,7 @@ class PostDetailView(DetailView):
         )
 
         # Проверяем права доступа: неопубликованные посты
-        #  доступны только автору.
+        # доступны только автору.
         if not post.is_published or (
             post.category and not post.category.is_published
         ):
@@ -112,13 +119,12 @@ class PostDetailView(DetailView):
         return context
 
 
-class CategoryListView(ListView):
+class CategoryListView(PaginateMixin, ListView):
     """Показывает все посты для каждой категории"""
 
     model = Category
     template_name = 'blog/category.html'
     context_object_name = 'post_list'
-    paginate_by = 10
 
     def get_queryset(self):
         """Переопределяем метод, прописывая свой запрос."""
@@ -246,13 +252,12 @@ class CommentDeleteView(OnlyAuthorMixin, DeleteView):
         )
 
 
-class UserDetailView(DetailView):
+class UserDetailView(PaginateMixin, DetailView):
     """CBV - страница просмотра профиля."""
 
     model = User
     template_name = 'blog/profile.html'
     context_object_name = 'profile'
-    paginate_by = 10
 
     def get_object(self, queryset=None) -> Model:
         username = self.kwargs['username']

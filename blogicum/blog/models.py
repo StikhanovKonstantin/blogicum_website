@@ -3,7 +3,6 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.urls import reverse
 
-# Импортируем абстрактную модель:
 from core.models import BaseModel
 from .constants import MAX_LEN
 

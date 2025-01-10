@@ -2,6 +2,8 @@ from django import forms
 
 from .models import Comment, Post
 
+from .constants import TEXT_WIDGET_SIZE
+
 
 class CommentsForm(forms.ModelForm):
     """Форма для оставления комментариев под постами."""
@@ -20,5 +22,7 @@ class PostForm(forms.ModelForm):
         )
         widgets = {
             'pub_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
-            'text': forms.TextInput(attrs={'size': 10, 'title': 'Ваш текст'})
+            'text': forms.TextInput(attrs={
+                'size': TEXT_WIDGET_SIZE, 'title': 'Ваш текст'}
+            )
         }
