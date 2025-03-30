@@ -33,8 +33,8 @@
 Откройте терминал и выполните команду:
 
 ```
-  git clone https://github.com/ваш-аккаунт/блогикум.git
-  cd блогикум
+  git clone git@github.com:StikhanovKonstantin/blogicum_website.git
+  cd blogicum
 ```
 
 -- Шаг 2. Создание виртуального окружения
@@ -89,6 +89,23 @@ python manage.py runserver
 - manage.py: Скрипт для управления проектом (запуск сервера, выполнение миграций и т.д.).
 
 ## Опыт использования
+- Регистрация
+![image](https://github.com/user-attachments/assets/155aa2f9-c120-4d34-9e58-f699080a6968)
+
+- Главная страница
+![image](https://github.com/user-attachments/assets/b163d3ed-41a6-4c21-bb96-0cc98727bfe3)
+
+- О проекте
+![image](https://github.com/user-attachments/assets/2a8b8d41-72c1-4755-a5c8-168afe564370)
+
+- Создание поста
+![image](https://github.com/user-attachments/assets/27aea036-c332-467c-8d96-898e5b00d294)
+
+- Профиль пользователя
+![image](https://github.com/user-attachments/assets/354266df-26f7-4b97-b9f3-5f41696b0214)
+
+
+
 
 
 
